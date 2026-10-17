@@ -116,6 +116,11 @@ public final class CollisionTests {
 				: random.nextFloat() < 0.05f ? palette[random.nextInt(palette.length)] : Blocks.AIR.defaultBlockState();
 			level.setBlock(pos.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z), state, 2 | 16);
 		}
+		// load every chunk a move can reach first: the vanilla run would otherwise load some of them as a side effect
+		// (block effects along its path) and the fixed run right after it would see blocks the vanilla run could not
+		for (int cx = (origin.getX() - 48) >> 4; cx <= (origin.getX() + size + 48) >> 4; cx++)
+			for (int cz = (origin.getZ() - 48) >> 4; cz <= (origin.getZ() + size + 48) >> 4; cz++)
+				level.getChunk(cx, cz);
 		List<Entity> obstacles = new ArrayList<>();
 		String[] obstacleKinds = {"boat", "minecart", "shulker"};
 		for (int i = 0; i < 60; i++) {
