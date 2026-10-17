@@ -47,7 +47,10 @@ public abstract class EntityMixin {
 		Entity self = (Entity) (Object) this;
 		Level level = this.level();
 		AABB box = this.getBoundingBox();
-		List<VoxelShape> entityShapes = level.getEntityCollisions(self, box.expandTowards(movement));
+		// vanilla only counts the world border when it is closer than twice the movement box; near it, keep vanilla
+		AABB swept = box.expandTowards(movement);
+		if (level.getWorldBorder().getDistanceToBorder(self) < 2.0 * Math.max(Math.max(swept.getXsize(), swept.getZsize()), 1.0) + 1.0) return;
+		List<VoxelShape> entityShapes = level.getEntityCollisions(self, swept);
 		//? if >=26 {
 		/*Vec3 result = CollisionLagFix.collide(movement, box, slab -> collectCollidersIgnoringWorldBorder(self, level, entityShapes, slab));
 		*///?} else
@@ -56,6 +59,7 @@ public abstract class EntityMixin {
 		boolean grounded = this.onGround() || result.y != movement.y && movement.y < 0.0;
 		// stepping up onto a block: leave it to vanilla, which this rarely reaches at these speeds
 		if (this.maxUpStep() > 0.0F && grounded && blockedHorizontally) return;
+		CollisionLagFix.perAxisMoves++;
 		cir.setReturnValue(result);
 	}
 }

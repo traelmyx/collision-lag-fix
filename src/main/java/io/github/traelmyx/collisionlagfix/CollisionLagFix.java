@@ -30,6 +30,8 @@ public final class CollisionLagFix {
 	public static boolean enabled = true;
 	/** Movements below this many blocks on every axis but one keep the vanilla path. */
 	public static double minSpeed = 2.0;
+	/** Moves that took the per-axis path, for the tests. */
+	public static long perAxisMoves;
 
 	private CollisionLagFix() {
 	}

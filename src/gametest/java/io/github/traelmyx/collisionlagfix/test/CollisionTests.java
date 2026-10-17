@@ -61,24 +61,25 @@ public final class CollisionTests {
 	}
 
 	/** One mover: what it is and the state it starts each run in, so the vanilla and fixed runs start identical. */
-	private record Mover(String kind, boolean onGround, boolean bootsOrSneak) {
+	private record Mover(String kind, boolean onGround, boolean sneak, boolean boots) {
 	}
 
-	private static Entity prepare(ServerLevel level, Mover mover, Entity player) {
-		Entity entity = mover.kind().equals("player") ? player : create(level, mover.kind());
-		entity.setDeltaMovement(Vec3.ZERO);
+	// a fresh entity every run: moving through powder snow leaves a slowdown that would carry over into the next move
+	private static Entity prepare(ServerLevel level, Mover mover) {
+		Entity entity = create(level, mover.kind());
 		entity.setOnGround(mover.onGround());
-		if (entity instanceof net.minecraft.world.entity.player.Player p) p.setShiftKeyDown(mover.bootsOrSneak());
-		else if (entity instanceof net.minecraft.world.entity.LivingEntity living)
-			living.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, mover.bootsOrSneak() ? new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.LEATHER_BOOTS) : net.minecraft.world.item.ItemStack.EMPTY);
+		// sneaking is what scaffolding's collision shape looks at; leather boots let mobs walk on powder snow
+		entity.setShiftKeyDown(mover.sneak());
+		if (mover.boots() && entity instanceof net.minecraft.world.entity.LivingEntity living)
+			living.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.LEATHER_BOOTS));
 		return entity;
 	}
 
-	private static Vec3 moveOnce(ServerLevel level, Mover mover, Entity player, Vec3 start, Vec3 motion, boolean fixed) {
+	private static Vec3 moveOnce(ServerLevel level, Mover mover, Vec3 start, Vec3 motion, boolean fixed) {
 		boolean was = CollisionLagFix.enabled;
 		CollisionLagFix.enabled = fixed;
 		try {
-			Entity entity = prepare(level, mover, player);
+			Entity entity = prepare(level, mover);
 			entity.setPos(start.x, start.y, start.z);
 			entity.move(MoverType.SELF, motion);
 			return entity.position();
@@ -88,13 +89,13 @@ public final class CollisionTests {
 	}
 
 	private static Vec3 moveOnce(ServerLevel level, String kind, Vec3 start, Vec3 motion, boolean fixed) {
-		return moveOnce(level, new Mover(kind, false, false), null, start, motion, fixed);
+		return moveOnce(level, new Mover(kind, false, false, false), start, motion, fixed);
 	}
 
 	/**
 	 * Thousands of random fast moves end exactly where vanilla ends them: through stone, top and bottom slabs, fences,
-	 * scaffolding and powder snow, past boats, minecarts and shulkers, for TNT, items, falling blocks, zombies with and
-	 * without leather boots, players sneaking or not, on the ground (step-up) or in the air, and across the world border.
+	 * scaffolding and powder snow, past boats, minecarts and shulkers, for TNT, items, falling blocks, zombies sneaking or
+	 * not and with or without leather boots, on the ground (step-up) or in the air, and across the world border.
 	 */
 	public static void matchesVanilla(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -125,11 +126,11 @@ public final class CollisionTests {
 			level.addFreshEntity(obstacle);
 			obstacles.add(obstacle);
 		}
-		Entity player = helper.makeMockServerPlayerInLevel();
 		var border = level.getWorldBorder();
 		double borderSize = border.getSize(), borderX = border.getCenterX(), borderZ = border.getCenterZ();
 		List<String> mismatches = new ArrayList<>();
 		int checked = 0;
+		long perAxisBefore = CollisionLagFix.perAxisMoves;
 		try {
 			for (int round = 0; round < 2; round++) {
 				if (round == 1) {
@@ -143,10 +144,10 @@ public final class CollisionTests {
 					Vec3 motion = new Vec3(random.nextGaussian(), random.nextGaussian() * 0.5, random.nextGaussian()).normalize().scale(speed);
 					if (random.nextInt(4) == 0) motion = new Vec3(motion.x, 0, motion.z);
 					if (!CollisionLagFix.isFast(motion)) continue;
-					String[] kinds = {"tnt", "item", "falling", "zombie", "player"};
-					Mover mover = new Mover(kinds[random.nextInt(kinds.length)], random.nextBoolean(), random.nextBoolean());
-					Vec3 vanilla = moveOnce(level, mover, player, start, motion, false);
-					Vec3 fixed = moveOnce(level, mover, player, start, motion, true);
+					String[] kinds = {"tnt", "item", "falling", "zombie", "zombie"};
+					Mover mover = new Mover(kinds[random.nextInt(kinds.length)], random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
+					Vec3 vanilla = moveOnce(level, mover, start, motion, false);
+					Vec3 fixed = moveOnce(level, mover, start, motion, true);
 					checked++;
 					if (!vanilla.equals(fixed) && mismatches.size() < 5)
 						mismatches.add(mover + (round == 1 ? " near the border" : "") + " from " + start + " by " + motion + ": vanilla " + vanilla + ", fixed " + fixed);
@@ -157,7 +158,10 @@ public final class CollisionTests {
 			border.setSize(borderSize);
 			obstacles.forEach(Entity::discard);
 		}
+		long perAxis = CollisionLagFix.perAxisMoves - perAxisBefore;
+		System.out.printf("[collision_lag_fix] compared %d fast moves, %d of them on the per-axis path%n", checked, perAxis);
 		helper.assertTrue(checked > 2500, "only " + checked + " fast moves checked");
+		helper.assertTrue(perAxis > checked / 2, "only " + perAxis + " of " + checked + " moves used the per-axis path");
 		helper.assertTrue(mismatches.isEmpty(), "moves differ from vanilla: " + mismatches);
 		helper.succeed();
 	}
