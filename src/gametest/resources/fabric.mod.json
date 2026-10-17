@@ -1,0 +1,14 @@
+{
+	"schemaVersion": 1,
+	"id": "${id}_gametest",
+	"version": "${version}",
+	"name": "Collision Lag Fix GameTests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": ["io.github.traelmyx.collisionlagfix.test.fabric.FabricGameTests"],
+		"client": ["io.github.traelmyx.collisionlagfix.test.fabric.FabricClientSmoke"]
+	},
+	"depends": {
+		"${id}": "*"
+	}
+}

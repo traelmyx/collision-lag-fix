@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "${id}",
+	"version": "${version}",
+	"name": "${name}",
+	"description": "Fast entities (TNT from cannons, launched items, anything moving many blocks per tick) no longer make the server check every block in a huge box around their path. Fixes MC-260743.",
+	"authors": ["traelmyx"],
+	"contact": {
+		"sources": "https://github.com/traelmyx/collision-lag-fix",
+		"issues": "https://github.com/traelmyx/collision-lag-fix/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/collision_lag_fix/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["io.github.traelmyx.collisionlagfix.fabric.CollisionLagFixFabric"]
+	},
+	"mixins": ["collision_lag_fix.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": "${mc_dep}",
+		"java": ">=${java}"
+	}
+}

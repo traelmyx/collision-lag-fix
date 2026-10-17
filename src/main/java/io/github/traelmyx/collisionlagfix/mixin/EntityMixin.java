@@ -1,0 +1,61 @@
+package io.github.traelmyx.collisionlagfix.mixin;
+
+import io.github.traelmyx.collisionlagfix.CollisionLagFix;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.List;
+
+@Mixin(Entity.class)
+public abstract class EntityMixin {
+	@Shadow
+	public abstract AABB getBoundingBox();
+
+	@Shadow
+	public abstract Level level();
+
+	@Shadow
+	public abstract float maxUpStep();
+
+	@Shadow
+	public abstract boolean onGround();
+
+	//? if >=26 {
+	/*@Shadow
+	private static List<VoxelShape> collectCollidersIgnoringWorldBorder(Entity entity, Level level, List<VoxelShape> entityShapes, AABB box) {
+		throw new AssertionError();
+	}
+	*///?} else {
+	@Shadow
+	private static List<VoxelShape> collectColliders(Entity entity, Level level, List<VoxelShape> entityShapes, AABB box) {
+		throw new AssertionError();
+	}
+	//?}
+
+	// HEAD of collide rather than collideBoundingBox: Lithium redirects the call inside collide to its own sweep
+	@Inject(method = "collide", at = @At("HEAD"), cancellable = true)
+	private void collisionlagfix$collidePerAxis(Vec3 movement, CallbackInfoReturnable<Vec3> cir) {
+		if (!CollisionLagFix.isFast(movement)) return;
+		Entity self = (Entity) (Object) this;
+		Level level = this.level();
+		AABB box = this.getBoundingBox();
+		List<VoxelShape> entityShapes = level.getEntityCollisions(self, box.expandTowards(movement));
+		//? if >=26 {
+		/*Vec3 result = CollisionLagFix.collide(movement, box, slab -> collectCollidersIgnoringWorldBorder(self, level, entityShapes, slab));
+		*///?} else
+		Vec3 result = CollisionLagFix.collide(movement, box, slab -> collectColliders(self, level, entityShapes, slab));
+		boolean blockedHorizontally = result.x != movement.x || result.z != movement.z;
+		boolean grounded = this.onGround() || result.y != movement.y && movement.y < 0.0;
+		// stepping up onto a block: leave it to vanilla, which this rarely reaches at these speeds
+		if (this.maxUpStep() > 0.0F && grounded && blockedHorizontally) return;
+		cir.setReturnValue(result);
+	}
+}
