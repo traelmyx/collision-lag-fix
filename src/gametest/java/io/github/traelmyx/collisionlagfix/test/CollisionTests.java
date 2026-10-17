@@ -19,7 +19,7 @@ public final class CollisionTests {
 	private CollisionTests() {
 	}
 
-	// far from the test structure, so forcing and releasing these chunks never touches the runner's own
+	// away from the test structure; everything happens within one tick, so the chunks setBlock loads stay loaded
 	private static final int OFFSET = 512;
 
 	private static Entity create(ServerLevel level, String kind) {
@@ -44,11 +44,6 @@ public final class CollisionTests {
 		return type.create(level);
 	}
 
-	private static void force(ServerLevel level, BlockPos min, BlockPos max, boolean forced) {
-		for (int cx = (min.getX() >> 4) - 1; cx <= (max.getX() >> 4) + 1; cx++)
-			for (int cz = (min.getZ() >> 4) - 1; cz <= (max.getZ() >> 4) + 1; cz++)
-				level.setChunkForced(cx, cz, forced);
-	}
 
 	private static Vec3 moveOnce(ServerLevel level, String kind, Vec3 start, Vec3 motion, boolean fixed) {
 		boolean was = CollisionLagFix.enabled;
@@ -68,8 +63,6 @@ public final class CollisionTests {
 		ServerLevel level = helper.getLevel();
 		BlockPos origin = helper.absolutePos(BlockPos.ZERO).offset(OFFSET, 0, 0);
 		int size = 40, height = 24;
-		BlockPos max = origin.offset(size, height, size);
-		force(level, origin, max, true);
 		RandomSource random = RandomSource.create(260743L);
 		BlockState[] palette = {Blocks.STONE.defaultBlockState(), Blocks.STONE_SLAB.defaultBlockState(), Blocks.OAK_FENCE.defaultBlockState()};
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -92,7 +85,6 @@ public final class CollisionTests {
 			checked++;
 			if (!vanilla.equals(fixed) && mismatches.size() < 5) mismatches.add(kind + " from " + start + " by " + motion + ": vanilla " + vanilla + ", fixed " + fixed);
 		}
-		force(level, origin, max, false);
 		helper.assertTrue(checked > 1500, "only " + checked + " fast moves checked");
 		helper.assertTrue(mismatches.isEmpty(), "moves differ from vanilla: " + mismatches);
 		helper.succeed();
@@ -113,8 +105,6 @@ public final class CollisionTests {
 		ServerLevel level = helper.getLevel();
 		BlockPos origin = helper.absolutePos(BlockPos.ZERO).offset(OFFSET, 0, 200);
 		int size = 96, height = 32;
-		BlockPos max = origin.offset(size, height + 8, size);
-		force(level, origin, max, true);
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		for (int x = 0; x < size; x++) for (int y = 0; y < height; y++) for (int z = 0; z < size; z++)
 			level.setBlock(pos.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z), Blocks.STONE.defaultBlockState(), 2 | 16);
@@ -123,7 +113,6 @@ public final class CollisionTests {
 		long vanilla = bestMoveNanos(level, start, motion, false);
 		long fixed = bestMoveNanos(level, start, motion, true);
 		Vec3 a = moveOnce(level, "tnt", start, motion, false), b = moveOnce(level, "tnt", start, motion, true);
-		force(level, origin, max, false);
 		System.out.printf("[collision_lag_fix] TNT at 80 blocks/tick into stone: vanilla %.2f ms, fixed %.3f ms%n", vanilla / 1e6, fixed / 1e6);
 		helper.assertTrue(a.equals(b), "different end positions: vanilla " + a + ", fixed " + b);
 		helper.assertTrue(fixed * 10 < vanilla, String.format("fix not faster: vanilla %.2f ms, fixed %.3f ms", vanilla / 1e6, fixed / 1e6));
