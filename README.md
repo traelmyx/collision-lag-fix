@@ -8,6 +8,8 @@ This mod collects only the blocks along the path each axis actually moves throug
 - Works alongside Lithium, which speeds up fast movement through air but still scans the whole box through solid terrain.
 - `config/collision_lag_fix.properties`: `enabled`, and `minSpeed` (blocks per tick on at least two axes before the per-axis check is used, default 2).
 
-Tests: a GameTest moves thousands of random entities through a random field of stone, slabs and fences and checks every end position against vanilla's, and another times a TNT fired into solid stone with and without the fix. Both run on 1.21.1, 1.21.11, 26.2 and 26.3 for Fabric and NeoForge, and on Fabric 1.21.1 with Lithium installed.
+Near the world border, and when a mob would step up onto a block, the move is left to vanilla.
+
+Tests: a GameTest moves thousands of random entities (TNT, items, falling blocks, zombies sneaking or in leather boots) through stone, slabs, fences, scaffolding and powder snow, past boats, minecarts and shulkers, and across the world border, and checks every end position against vanilla's, and another times a TNT fired into solid stone with and without the fix. Both run on 1.21.1, 1.21.11, 26.2 and 26.3 for Fabric and NeoForge, and on Fabric 1.21.1 with Lithium installed.
 
 MIT licensed.
