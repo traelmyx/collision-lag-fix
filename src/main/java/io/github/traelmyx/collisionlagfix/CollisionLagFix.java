@@ -30,6 +30,8 @@ public final class CollisionLagFix {
 	public static boolean enabled = true;
 	/** Movements below this many blocks on every axis but one keep the vanilla path. */
 	public static double minSpeed = 2.0;
+	/** MC-263882, 1.21.1 only: TNT skips the fall-distance ray trace it doesn't need. */
+	public static boolean skipTntFallTrace = true;
 	/** Moves that took the per-axis path, for the tests. */
 	public static long perAxisMoves;
 
@@ -82,12 +84,14 @@ public final class CollisionLagFix {
 		} catch (NumberFormatException e) {
 			minSpeed = 2.0;
 		}
+		skipTntFallTrace = Boolean.parseBoolean(props.getProperty("skipTntFallTrace", "true"));
 		props.setProperty("enabled", Boolean.toString(enabled));
+		props.setProperty("skipTntFallTrace", Boolean.toString(skipTntFallTrace));
 		props.setProperty("minSpeed", Double.toString(minSpeed));
 		try {
 			Files.createDirectories(configDir);
 			try (Writer writer = Files.newBufferedWriter(file)) {
-				props.store(writer, "Collision Lag Fix. enabled: use the per-axis collision check. minSpeed: blocks per tick, on at least two axes, before it is used.");
+				props.store(writer, "Collision Lag Fix. enabled: use the per-axis collision check. minSpeed: blocks per tick, on at least two axes, before it is used. skipTntFallTrace (1.21.1): TNT skips the fall-distance ray trace (MC-263882).");
 			}
 		} catch (IOException e) {
 			LOGGER.warn("Could not write {}", file, e);

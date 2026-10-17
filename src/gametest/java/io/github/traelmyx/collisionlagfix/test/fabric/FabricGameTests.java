@@ -23,6 +23,11 @@ public class FabricGameTests {
 	public void fastTntIsCheap(GameTestHelper helper) {
 		CollisionTests.fastTntIsCheap(helper);
 	}
+
+	@GameTest(structure = EMPTY, maxTicks = 200)
+	public void fallingTntSkipsTrace(GameTestHelper helper) {
+		CollisionTests.fallingTntSkipsTrace(helper);
+	}
 }
 //?} else {
 /^public class FabricGameTests implements FabricGameTest {
@@ -36,6 +41,11 @@ public class FabricGameTests {
 	@GameTest(template = EMPTY, timeoutTicks = 2400)
 	public void fastTntIsCheap(GameTestHelper helper) {
 		CollisionTests.fastTntIsCheap(helper);
+	}
+
+	@GameTest(template = EMPTY, timeoutTicks = 200)
+	public void fallingTntSkipsTrace(GameTestHelper helper) {
+		CollisionTests.fallingTntSkipsTrace(helper);
 	}
 }
 ^///?}

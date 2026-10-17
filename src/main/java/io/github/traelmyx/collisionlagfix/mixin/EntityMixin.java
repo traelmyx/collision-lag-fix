@@ -62,4 +62,20 @@ public abstract class EntityMixin {
 		CollisionLagFix.perAxisMoves++;
 		cir.setReturnValue(result);
 	}
+
+	//? if <1.21.11 {
+	/**
+	 * MC-263882: before 1.21.11, an entity with any fall distance traces a ray along its whole movement every tick to see
+	 * whether it passes water or cobwebs, which for cannon TNT means a ray of a hundred blocks or more per tick. TNT can't
+	 * take fall damage, so for TNT without passengers the trace changes nothing; skip it. Newer versions cap it at 8 blocks.
+	 */
+	@com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;clip(Lnet/minecraft/world/level/ClipContext;)Lnet/minecraft/world/phys/BlockHitResult;"))
+	private net.minecraft.world.phys.BlockHitResult collisionlagfix$skipTntFallTrace(Level level, net.minecraft.world.level.ClipContext context,
+		com.llamalad7.mixinextras.injector.wrapoperation.Operation<net.minecraft.world.phys.BlockHitResult> original) {
+		Entity self = (Entity) (Object) this;
+		if (CollisionLagFix.enabled && CollisionLagFix.skipTntFallTrace && self instanceof net.minecraft.world.entity.item.PrimedTnt && !self.isVehicle())
+			return net.minecraft.world.phys.BlockHitResult.miss(self.position(), net.minecraft.core.Direction.DOWN, self.blockPosition());
+		return original.call(level, context);
+	}
+	//?}
 }

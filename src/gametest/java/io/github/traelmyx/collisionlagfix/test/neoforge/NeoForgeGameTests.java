@@ -52,6 +52,7 @@ public class NeoForgeGameTests {
 	static {
 		FUNCTIONS.register("matches_vanilla", () -> CollisionTests::matchesVanilla);
 		FUNCTIONS.register("fast_tnt_is_cheap", () -> CollisionTests::fastTntIsCheap);
+		FUNCTIONS.register("falling_tnt_skips_trace", () -> CollisionTests::fallingTntSkipsTrace);
 	}
 
 	private static void registerTests(RegisterGameTestsEvent event) {
@@ -61,6 +62,7 @@ public class NeoForgeGameTests {
 		/^Holder<TestEnvironmentDefinition> env = event.registerEnvironment(Identifier.fromNamespaceAndPath(MOD_ID, "default"));^/
 		register(event, env, "matches_vanilla", 2400, 1, 1);
 		register(event, env, "fast_tnt_is_cheap", 2400, 1, 1);
+		register(event, env, "falling_tnt_skips_trace", 200, 1, 1);
 	}
 
 	//? if >=26 {
@@ -89,6 +91,11 @@ public class NeoForgeGameTests {
 	@GameTest(template = "empty", timeoutTicks = 2400)
 	public static void fastTntIsCheap(GameTestHelper helper) {
 		CollisionTests.fastTntIsCheap(helper);
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void fallingTntSkipsTrace(GameTestHelper helper) {
+		CollisionTests.fallingTntSkipsTrace(helper);
 	}
 	//?}
 }

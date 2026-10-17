@@ -195,4 +195,34 @@ public final class CollisionTests {
 		helper.assertTrue(fixed * 10 < vanilla, String.format("fix not faster: vanilla %.2f ms, fixed %.3f ms", vanilla / 1e6, fixed / 1e6));
 		helper.succeed();
 	}
+
+	/** MC-263882 (1.21.1): TNT falling 150 blocks per tick no longer traces a ray along its whole fall, and lands the same. */
+	public static void fallingTntSkipsTrace(GameTestHelper helper) {
+		//? if <1.21.11 {
+		ServerLevel level = helper.getLevel();
+		Vec3 start = Vec3.atBottomCenterOf(helper.absolutePos(BlockPos.ZERO).offset(OFFSET, 200, 400));
+		Vec3 motion = new Vec3(0, -150, 0);
+		long vanilla = Long.MAX_VALUE, fixed = Long.MAX_VALUE;
+		Vec3 endVanilla = null, endFixed = null;
+		for (int trial = 0; trial < 5; trial++) {
+			for (boolean fix : new boolean[] {false, true}) {
+				boolean was = CollisionLagFix.skipTntFallTrace;
+				CollisionLagFix.skipTntFallTrace = fix;
+				Entity tnt = create(level, "tnt");
+				tnt.setPos(start.x, start.y, start.z);
+				tnt.fallDistance = 10;
+				long t0 = System.nanoTime();
+				tnt.move(MoverType.SELF, motion);
+				long t = System.nanoTime() - t0;
+				CollisionLagFix.skipTntFallTrace = was;
+				if (fix) { fixed = Math.min(fixed, t); endFixed = tnt.position(); }
+				else { vanilla = Math.min(vanilla, t); endVanilla = tnt.position(); }
+			}
+		}
+		System.out.printf("[collision_lag_fix] TNT falling 150 blocks/tick: vanilla %.3f ms, fixed %.3f ms%n", vanilla / 1e6, fixed / 1e6);
+		helper.assertTrue(endVanilla.equals(endFixed), "different end positions: " + endVanilla + " and " + endFixed);
+		helper.assertTrue(fixed < vanilla, String.format("no faster: vanilla %.3f ms, fixed %.3f ms", vanilla / 1e6, fixed / 1e6));
+		//?}
+		helper.succeed();
+	}
 }
